@@ -1,0 +1,56 @@
+<div class="page">
+
+  <div class="page-header">
+    <a routerLink="/" class="back-link">← Back</a>
+    <div class="page-title">
+      <h1>Library</h1>
+      <span class="count">{{ totalElements }} sites</span>
+    </div>
+  </div>
+
+  <div class="search-wrapper">
+    <input
+      type="text"
+      [(ngModel)]="searchQuery"
+      placeholder="Search a website..."
+      class="search-input"
+    />
+  </div>
+
+  <div class="empty-state" *ngIf="loading && items.length === 0">
+    Loading...
+  </div>
+
+  <div class="grid" *ngIf="filteredItems.length > 0">
+    <div class="lib-card" *ngFor="let item of filteredItems" (click)="goToSite(item.domain)">
+      <div class="color-strip">
+        <div
+          class="strip-segment"
+          *ngFor="let color of item.colors"
+          [style.background]="color.hex"
+          [style.flex]="color.frequency">
+        </div>
+      </div>
+      <div class="lib-card-body">
+        <div class="lib-card-header">
+          <img *ngIf="item.faviconUrl" [src]="item.faviconUrl" class="favicon" alt=""/>
+          <span class="domain">{{ item.domain }}</span>
+        </div>
+        <div class="lib-card-dots">
+          <div class="dot" *ngFor="let color of item.colors" [style.background]="color.hex" [title]="color.hex"></div>
+        </div>
+        <div class="lib-card-meta">
+          <span>{{ item.createdAt | timeAgo }}</span>
+          <span *ngIf="item.updatedAt !== item.createdAt">· updated {{ item.updatedAt | timeAgo }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="load-more" *ngIf="!isLast && items.length > 0">
+    <button class="load-btn" (click)="loadMore()" [disabled]="loading">
+      {{ loading ? 'Loading...' : 'Load more' }}
+    </button>
+  </div>
+
+</div>

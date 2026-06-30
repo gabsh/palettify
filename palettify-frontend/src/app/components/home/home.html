@@ -1,0 +1,81 @@
+<div class="page">
+
+  <header class="header">
+    <div class="brand">
+      <svg class="brand-icon" width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="12" cy="13" r="10" fill="#a78bfa" fill-opacity="0.88"/>
+        <circle cx="24" cy="13" r="10" fill="#60a5fa" fill-opacity="0.88"/>
+        <circle cx="18" cy="24" r="10" fill="#f472b6" fill-opacity="0.88"/>
+      </svg>
+      <span class="brand-name">Palettify</span>
+    </div>
+    <p class="tagline">Extract color palettes from any website</p>
+    <a routerLink="/library" class="library-link">View Library →</a>
+  </header>
+
+  <div class="input-section">
+    <div class="input-wrapper">
+      <input
+        type="text"
+        [(ngModel)]="url"
+        placeholder="https://stripe.com"
+        class="url-input"
+        (keydown.enter)="extract()"
+      />
+      <button (click)="extract()" class="extract-btn" [disabled]="loading">
+        {{ loading ? spinnerChar : 'Extract' }}
+      </button>
+    </div>
+    <p class="error-msg" *ngIf="error">{{ error }}</p>
+  </div>
+
+  <section class="results" *ngIf="response">
+
+    <div class="site-bar">
+      <div class="site-info">
+        <img *ngIf="response.faviconUrl" [src]="response.faviconUrl" class="favicon" alt=""/>
+        <span class="domain">{{ response.domain }}</span>
+      </div>
+      <button class="refresh-btn" (click)="extract(true)" [disabled]="loading">↺ Refresh</button>
+    </div>
+
+    <div class="meta-row" *ngIf="(response.fonts && response.fonts.length > 0) || (response.logoColors && response.logoColors.length > 0)">
+      <div class="meta-group" *ngIf="response.fonts && response.fonts.length > 0">
+        <span class="meta-label">Fonts</span>
+        <div class="font-tags">
+          <span class="font-tag" *ngFor="let font of response.fonts">{{ font }}</span>
+        </div>
+      </div>
+      <div class="meta-group" *ngIf="response.logoColors && response.logoColors.length > 0">
+        <span class="meta-label">Logo</span>
+        <div class="logo-dots">
+          <div
+            class="logo-dot"
+            *ngFor="let color of response.logoColors"
+            [style.background]="color"
+            [title]="color"
+            (click)="copyToClipboard(color)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palette-grid">
+      <div class="color-card" *ngFor="let color of response.colors" (click)="copyToClipboard(color.hex)">
+        <div class="swatch" [style.background]="color.hex">
+          <div class="copy-hint">Copy</div>
+        </div>
+        <div class="card-info">
+          <span class="hex-code">{{ color.hex }}</span>
+          <span class="freq-pct">{{ color.frequency * 100 | number:'1.0-1' }}%</span>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+<div class="toast" [class.visible]="copiedColor">
+  ✓ {{ copiedColor }} copied
+</div>

@@ -1,0 +1,27 @@
+# ===== Backend (Maven / Spring Boot) =====
+palettify-backend/target/
+palettify-backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+*.war
+*.ear
+
+# ===== Frontend (Angular / Node) =====
+palettify-frontend/node_modules/
+palettify-frontend/dist/
+palettify-frontend/.angular/
+
+# ===== Kubernetes secrets =====
+palettify-k8s/*-secret.yaml
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Debug =====
+screenshot-debug.png

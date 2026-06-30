@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: palettify
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/palettify"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  SPRING_JPA_SHOW_SQL: "false"
+  SERVER_PORT: "8080"
