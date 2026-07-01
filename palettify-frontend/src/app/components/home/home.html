@@ -18,7 +18,7 @@
       <input
         type="text"
         [(ngModel)]="url"
-        placeholder="https://stripe.com"
+        placeholder="https://example.com"
         class="url-input"
         (keydown.enter)="extract()"
       />
@@ -39,23 +39,11 @@
       <button class="refresh-btn" (click)="extract(true)" [disabled]="loading">↺ Refresh</button>
     </div>
 
-    <div class="meta-row" *ngIf="(response.fonts && response.fonts.length > 0) || (response.logoColors && response.logoColors.length > 0)">
-      <div class="meta-group" *ngIf="response.fonts && response.fonts.length > 0">
+    <div class="meta-row" *ngIf="response.fonts && response.fonts.length > 0">
+      <div class="meta-group">
         <span class="meta-label">Fonts</span>
         <div class="font-tags">
           <span class="font-tag" *ngFor="let font of response.fonts">{{ font }}</span>
-        </div>
-      </div>
-      <div class="meta-group" *ngIf="response.logoColors && response.logoColors.length > 0">
-        <span class="meta-label">Logo</span>
-        <div class="logo-dots">
-          <div
-            class="logo-dot"
-            *ngFor="let color of response.logoColors"
-            [style.background]="color"
-            [title]="color"
-            (click)="copyToClipboard(color)">
-          </div>
         </div>
       </div>
     </div>
@@ -78,4 +66,17 @@
 
 <div class="toast" [class.visible]="copiedColor">
   ✓ {{ copiedColor }} copied
+</div>
+
+<div class="popup-overlay" *ngIf="showPopup" (click)="closePopup()">
+  <div class="popup" (click)="$event.stopPropagation()">
+    <div class="popup-header">
+      <span class="popup-title">Palettify</span>
+      <button class="popup-close" (click)="closePopup()">✕</button>
+    </div>
+    <p class="popup-desc">Extract color palettes and fonts from any website.</p>
+    <p class="popup-desc">Built with Spring Boot · Angular · Playwright · PostgreSQL · Kubernetes.</p>
+    <p class="popup-wip">Work in progress — some extractions may be inaccurate. More features coming soon.</p>
+    <button class="popup-btn" (click)="closePopup()">Got it</button>
+  </div>
 </div>

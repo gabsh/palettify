@@ -19,7 +19,6 @@ interface PaletteResponse {
   colors: ColorInfo[];
   fonts: string[];
   faviconUrl: string;
-  logoColors: string[];
 }
 
 @Component({
@@ -35,6 +34,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   error = '';
   copiedColor = '';
   spinnerChar = '';
+  showPopup = true;
 
   private readonly spinnerChars = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏';
   private spinnerIdx = 0;
@@ -114,6 +114,10 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  closePopup() {
+    this.showPopup = false;
   }
 
   copyToClipboard(hex: string) {
