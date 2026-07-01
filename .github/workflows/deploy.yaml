@@ -53,7 +53,7 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           port: 2222
           source: palettify-k8s/
-          target: ~/palettify/
+          target: /home/ubuntu/palettify/
 
       - name: Apply manifests and restart deployments
         uses: appleboy/ssh-action@v1
