@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.time.LocalDateTime;
 import java.net.InetAddress;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 @Service
 @RequiredArgsConstructor
@@ -34,39 +36,57 @@ public class PaletteService {
     private final PaletteResultRepository repository;
     private final ObjectMapper objectMapper;
 
+    // Max 2 Chromium instances simultaneously to avoid OOM
+    private final Semaphore browserSlots = new Semaphore(2, true);
+    // Per-domain lock to prevent duplicate extractions for the same site
+    private final ConcurrentHashMap<String, Semaphore> domainLocks = new ConcurrentHashMap<>();
+
     public PaletteResponse extractPalette(String url, boolean force) throws Exception {
         url = normalizeUrl(url);
         validateUrl(url);
         String domain = extractDomain(url);
         String rootUrl = "https://" + domain;
 
-        Optional<PaletteResult> cached = repository.findByDomain(domain);
-        if (cached.isPresent() && !force) {
-            PaletteResult result = cached.get();
-            boolean isExpired = result.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(7));
+        Semaphore domainLock = domainLocks.computeIfAbsent(domain, k -> new Semaphore(1, true));
+        domainLock.acquire();
+        try {
+            Optional<PaletteResult> cached = repository.findByDomain(domain);
+            if (cached.isPresent() && !force) {
+                PaletteResult result = cached.get();
+                boolean isExpired = result.getUpdatedAt().isBefore(LocalDateTime.now().minusDays(7));
 
-            if (!isExpired) {
-                result.setLastAccessedAt(LocalDateTime.now());
-                repository.save(result);
+                if (!isExpired) {
+                    result.setLastAccessedAt(LocalDateTime.now());
+                    repository.save(result);
 
-                List<ColorInfo> colors = objectMapper.readValue(result.getColors(), new TypeReference<>() {});
-                List<String> fonts = objectMapper.readValue(result.getFonts(), new TypeReference<>() {});
-                return new PaletteResponse(rootUrl, domain, colors, fonts, result.getFaviconUrl());
+                    List<ColorInfo> colors = objectMapper.readValue(result.getColors(), new TypeReference<>() {});
+                    List<String> fonts = objectMapper.readValue(result.getFonts(), new TypeReference<>() {});
+                    return new PaletteResponse(rootUrl, domain, colors, fonts, result.getFaviconUrl());
+                }
             }
+
+            browserSlots.acquire();
+            SiteMetadata metadata;
+            try {
+                metadata = screenshotService.extractMetadata(rootUrl);
+            } finally {
+                browserSlots.release();
+            }
+
+            List<ColorInfo> colors = colorExtractionService.extractColors(metadata.getScreenshot());
+
+            PaletteResult result = cached.orElse(new PaletteResult());
+            result.setDomain(domain);
+            result.setUrl(rootUrl);
+            result.setColors(objectMapper.writeValueAsString(colors));
+            result.setFonts(objectMapper.writeValueAsString(metadata.getFonts()));
+            result.setFaviconUrl(metadata.getFaviconUrl());
+            repository.save(result);
+
+            return new PaletteResponse(rootUrl, domain, colors, metadata.getFonts(), metadata.getFaviconUrl());
+        } finally {
+            domainLock.release();
         }
-
-        SiteMetadata metadata = screenshotService.extractMetadata(rootUrl);
-        List<ColorInfo> colors = colorExtractionService.extractColors(metadata.getScreenshot());
-
-        PaletteResult result = cached.orElse(new PaletteResult());
-        result.setDomain(domain);
-        result.setUrl(rootUrl);
-        result.setColors(objectMapper.writeValueAsString(colors));
-        result.setFonts(objectMapper.writeValueAsString(metadata.getFonts()));
-        result.setFaviconUrl(metadata.getFaviconUrl());
-        repository.save(result);
-
-        return new PaletteResponse(rootUrl, domain, colors, metadata.getFonts(), metadata.getFaviconUrl());
     }
 
     public Page<LibraryItemResponse> getLibrary(int page, int size) throws Exception {
